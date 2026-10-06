@@ -45,7 +45,11 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "decimals": 0
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
         },
         "overrides": []
       },
@@ -92,7 +96,11 @@
       "fieldConfig": {
         "defaults": {
           "unit": "locale",
-          "decimals": 0
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          }
         },
         "overrides": []
       },
@@ -139,7 +147,11 @@
       "fieldConfig": {
         "defaults": {
           "unit": "locale",
-          "decimals": 0
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          }
         },
         "overrides": []
       },
@@ -159,7 +171,7 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "Pesanan / menit (5 menit terakhir)",
+      "title": "Pesanan / menit (rata-rata 5 menit)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "streaming-pg"
@@ -177,7 +189,7 @@
             "type": "grafana-postgresql-datasource",
             "uid": "streaming-pg"
           },
-          "rawSql": "select coalesce(sum(orders),0)/5.0 as opm from stream.order_metrics_1m where window_start >= now() - interval '5 minutes'",
+          "rawSql": "select coalesce(sum(orders)::numeric / nullif(count(distinct window_start), 0), 0) as opm from stream.order_metrics_1m where window_start >= date_trunc('minute', now()) - interval '5 minutes' and window_start < date_trunc('minute', now())",
           "format": "table",
           "rawQuery": true,
           "editorMode": "code"
@@ -186,7 +198,11 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "decimals": 1
+          "decimals": 1,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          }
         },
         "overrides": []
       },
@@ -201,7 +217,8 @@
         "colorMode": "value",
         "graphMode": "none",
         "textMode": "auto"
-      }
+      },
+      "description": "Rata-rata 5 jendela 1 menit terakhir yang sudah lengkap (menit berjalan tidak dihitung)."
     },
     {
       "id": 5,
@@ -224,7 +241,7 @@
             "type": "grafana-postgresql-datasource",
             "uid": "streaming-pg"
           },
-          "rawSql": "select window_start as time, city as metric, sum(gmv_idr) as value from stream.order_metrics_1m where $__timeFilter(window_start) group by 1, 2 order by 1",
+          "rawSql": "select window_start as time, city as metric, sum(gmv_idr) as value from stream.order_metrics_1m where $__timeFilter(window_start) and window_start < date_trunc('minute', now()) group by 1, 2 order by 1",
           "format": "time_series",
           "rawQuery": true,
           "editorMode": "code"
@@ -236,10 +253,11 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 10,
+            "fillOpacity": 0,
             "stacking": {
-              "mode": "normal"
-            }
+              "mode": "none"
+            },
+            "showPoints": "always"
           }
         },
         "overrides": []
@@ -252,7 +270,8 @@
         "tooltip": {
           "mode": "multi"
         }
-      }
+      },
+      "description": "Hanya menit yang sudah lengkap; menit yang sedang berjalan disembunyikan."
     },
     {
       "id": 6,
@@ -325,7 +344,13 @@
           "rawQuery": true,
           "editorMode": "code"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale"
+        },
+        "overrides": []
+      }
     }
   ]
 }

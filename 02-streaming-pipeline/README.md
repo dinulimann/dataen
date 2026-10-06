@@ -6,6 +6,9 @@ Pipeline streaming yang memproses event pesanan e-commerce dari 8 kota di Indone
 
 Data sengaja dibuat "kotor" seperti di dunia nyata: ada event yang **terlambat**, **sangat terlambat**, dan **rusak**. Pipeline ini menunjukkan cara menangani ketiganya dengan benar.
 
+![Dashboard Grafana real-time](docs/grafana-dashboard.png)
+<sub>Dashboard Grafana saat pipeline berjalan dengan ±40 event/detik. Diperbarui otomatis setiap 5 detik.</sub>
+
 ## Arsitektur
 
 ```mermaid
@@ -121,7 +124,8 @@ make lint test
 
 - **Unit test** (16 test) memakai Spark lokal dengan DataFrame biasa. Logika transformasi dipisahkan dari I/O (`transforms.py`), sehingga bisa dites tanpa Kafka.
 - Yang dites: setiap aturan validasi, pemisahan valid/invalid, format pesan DLQ, parsing zona waktu WIB, hasil agregasi per jendela, serta rasio dan determinisme generator.
-- **Uji integrasi manual** dengan Kafka 4.1 dan Postgres 16 sungguhan. Semua 113 event rusak masuk ke DLQ, event yang sangat terlambat dibuang (`dropped_late`), dan setelah job di-restart dari checkpoint tidak ada data yang terhitung dua kali.
+- **Uji integrasi manual** dengan Kafka dan Postgres sungguhan. Semua 113 event rusak masuk ke DLQ, event yang sangat terlambat dibuang (`dropped_late`), dan setelah job di-restart dari checkpoint tidak ada data yang terhitung dua kali.
+- **Uji stack Docker Compose**: layanan `kafka`, `kafka-init`, `postgres`, dan `grafana` dari `docker-compose.yml` dijalankan, lalu producer dan Spark job dihubungkan lewat listener eksternal `localhost:9092`. Hasilnya 117 micro-batch tanpa error, datasource dan dashboard Grafana termuat otomatis, dan `make dlq` menampilkan isi DLQ. Screenshot di atas diambil dari uji ini.
 
 ## Struktur Proyek
 
