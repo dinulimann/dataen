@@ -1,0 +1,11 @@
+city_id,city_name,province,island,latitude,longitude
+jakarta,Jakarta,DKI Jakarta,Jawa,-6.2088,106.8456
+surabaya,Surabaya,Jawa Timur,Jawa,-7.2575,112.7521
+bandung,Bandung,Jawa Barat,Jawa,-6.9175,107.6191
+medan,Medan,Sumatera Utara,Sumatera,3.5952,98.6722
+palembang,Palembang,Sumatera Selatan,Sumatera,-2.9761,104.7754
+makassar,Makassar,Sulawesi Selatan,Sulawesi,-5.1477,119.4327
+balikpapan,Balikpapan,Kalimantan Timur,Kalimantan,-1.2379,116.8529
+denpasar,Denpasar,Bali,Bali & Nusa Tenggara,-8.6705,115.2126
+kupang,Kupang,Nusa Tenggara Timur,Bali & Nusa Tenggara,-10.1772,123.6070
+jayapura,Jayapura,Papua,Papua,-2.5337,140.7181

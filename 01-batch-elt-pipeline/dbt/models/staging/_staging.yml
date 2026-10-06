@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: stg_open_meteo__daily
+    description: Data cuaca harian dengan nama kolom dan satuan yang jelas.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [city_id, weather_date]
+    columns:
+      - name: city_id
+        data_tests: [not_null]
+      - name: weather_date
+        data_tests: [not_null]
+      - name: temp_max_c
+        data_tests:
+          - value_between:
+              arguments: {min_value: -10, max_value: 50}
+      - name: temp_min_c
+        data_tests:
+          - value_between:
+              arguments: {min_value: -10, max_value: 50}
+      - name: precipitation_mm
+        data_tests:
+          - value_between:
+              arguments: {min_value: 0, max_value: 500}

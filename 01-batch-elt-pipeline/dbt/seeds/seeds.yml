@@ -1,0 +1,8 @@
+version: 2
+
+seeds:
+  - name: cities
+    description: Daftar kota yang dipantau beserta koordinatnya. Juga dibaca oleh proses ingestion.
+    columns:
+      - name: city_id
+        data_tests: [unique, not_null]

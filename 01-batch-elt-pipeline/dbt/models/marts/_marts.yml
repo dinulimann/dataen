@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: dim_city
+    description: Dimensi kota (dari seed).
+    columns:
+      - name: city_id
+        data_tests: [unique, not_null]
+
+  - name: fct_weather_daily
+    description: Fakta cuaca harian per kota. Grain = satu kota per hari. Incremental.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [city_id, weather_date]
+    columns:
+      - name: city_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_city')
+                field: city_id
+      - name: weather_category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['cerah', 'berawan', 'berkabut', 'hujan', 'badai petir', 'lainnya']
+
+  - name: mart_city_monthly_weather
+    description: Agregat bulanan per kota (suhu rata-rata, total hujan, jumlah hari hujan).
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [city_id, month]
+    columns:
+      - name: rainy_day_pct
+        data_tests:
+          - value_between:
+              arguments: {min_value: 0, max_value: 100}

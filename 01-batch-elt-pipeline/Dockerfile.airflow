@@ -1,0 +1,5 @@
+FROM apache/airflow:2.11.2-python3.11
+
+# dbt dipasang di virtualenv terpisah agar dependensinya tidak bentrok dengan Airflow.
+RUN python -m venv /home/airflow/dbt-venv \
+    && /home/airflow/dbt-venv/bin/pip install --no-cache-dir "dbt-core~=1.11.0" "dbt-postgres~=1.11.0"

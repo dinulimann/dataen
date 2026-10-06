@@ -1,0 +1,30 @@
+name: weather_warehouse
+version: "1.0.0"
+config-version: 2
+profile: weather_warehouse
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+vars:
+  # Hari dengan curah hujan >= ambang ini dihitung sebagai "hari hujan" (standar BMKG: 1 mm)
+  rainy_day_threshold_mm: 1.0
+
+seeds:
+  weather_warehouse:
+    +schema: reference
+    cities:
+      +column_types:
+        latitude: numeric(8,4)
+        longitude: numeric(8,4)
+
+models:
+  weather_warehouse:
+    staging:
+      +schema: staging
+      +materialized: view
+    marts:
+      +schema: marts
+      +materialized: table
