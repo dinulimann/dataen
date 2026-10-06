@@ -77,6 +77,8 @@ order_metrics batch=3 input_rows=245 rows_per_sec=205.9 dropped_late=13
 ```
 Spark UI tersedia di http://localhost:4040.
 
+Dari luar, DAG `streaming_health` di [proyek 01](../01-batch-elt-pipeline/README.md#orkestrasi-lintas-proyek) memeriksa tabel `stream.order_metrics_1m` setiap 10 menit, dan akan gagal (merah di Airflow) bila data berhenti mengalir lebih dari 5 menit atau volume pesanan anjlok di bawah 50% baseline.
+
 ## Cara Menjalankan
 
 Prasyarat: Docker dan Docker Compose.

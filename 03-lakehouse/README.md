@@ -114,6 +114,8 @@ make history TABLE=silver/trips
 
 Tabel yang bisa di-query: `bronze_yellow_trips`, `silver_trips`, `silver_trips_quarantine`, `silver_zones`, `gold_daily_zone_metrics`, `gold_hourly_demand`, `gold_payment_summary`, `gold_top_routes`.
 
+Penjadwalan bulanan otomatis (menunggu data terbit, lalu bronze → silver → gold → maintain) dilakukan oleh DAG `lakehouse_monthly` di [proyek 01](../01-batch-elt-pipeline/README.md#orkestrasi-lintas-proyek), yang menjalankan image ini lewat `DockerOperator`.
+
 Tiap lapisan juga bisa dijalankan terpisah:
 ```bash
 docker compose run --rm lakehouse run --months 2024-01 --stage silver
@@ -163,7 +165,7 @@ Ada **24 test** yang memakai Spark + Delta lokal:
 ## Pengembangan Selanjutnya
 
 - [ ] Simpan lakehouse di object storage (MinIO/S3) alih-alih disk lokal
-- [ ] Orkestrasi bulanan dengan Airflow (lihat [proyek 01](../01-batch-elt-pipeline/))
+- [x] Orkestrasi bulanan dengan Airflow: DAG `lakehouse_monthly` di [proyek 01](../01-batch-elt-pipeline/README.md#orkestrasi-lintas-proyek)
 - [ ] Gold incremental dan Change Data Feed Delta
 - [ ] Query gold dengan DuckDB atau Trino, lalu buat dashboard
 - [ ] Bandingkan dengan Apache Iceberg

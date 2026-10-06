@@ -21,6 +21,20 @@ x-airflow-common: &airflow-common
     WAREHOUSE_DB: warehouse
     WAREHOUSE_USER: ${POSTGRES_USER:-postgres}
     WAREHOUSE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    # --- Orkestrasi lintas proyek ---
+    # Lakehouse (proyek 03): dijalankan sebagai container lewat docker-socket-proxy.
+    DOCKER_URL: tcp://docker-proxy:2375
+    LAKEHOUSE_IMAGE: taxi-lakehouse:local
+    LAKEHOUSE_HOST_PATH: ${LAKEHOUSE_HOST_PATH:-}
+    LAKEHOUSE_LAG_MONTHS: "2"
+    # Streaming (proyek 02): Postgres-nya diakses lewat port host 5433.
+    STREAMING_PG_HOST: host.docker.internal
+    STREAMING_PG_PORT: "5433"
+    STREAMING_PG_DB: streaming
+    STREAMING_PG_USER: ${STREAMING_PG_USER:-postgres}
+    STREAMING_PG_PASSWORD: ${STREAMING_PG_PASSWORD:-postgres}
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
   volumes:
     - ./dags:/opt/airflow/dags
     - ./src:/opt/airflow/src
@@ -47,6 +61,19 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 5s
       retries: 10
+
+  # Akses terbatas ke Docker API untuk DockerOperator, tanpa memberi Airflow
+  # socket Docker secara langsung (dan tanpa urusan izin grup docker).
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:0.3.0
+    environment:
+      CONTAINERS: 1
+      IMAGES: 1
+      POST: 1
+      # Tanpa ini haproxy gagal start di Docker yang IPv6-nya nonaktif.
+      DISABLE_IPV6: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
   minio:
     image: minio/minio:latest
@@ -93,6 +120,8 @@ services:
     depends_on:
       airflow-init:
         condition: service_completed_successfully
+      docker-proxy:
+        condition: service_started
 
   # Opsional: jalankan dengan `docker compose --profile bi up -d`
   metabase:

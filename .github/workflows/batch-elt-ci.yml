@@ -52,3 +52,22 @@ jobs:
       - name: dbt build again (incremental run must stay idempotent)
         working-directory: 01-batch-elt-pipeline/dbt
         run: dbt build --profiles-dir .
+
+  dags:
+    # DAG integrity test dengan versi Airflow yang sama seperti di Docker image.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install Airflow (dengan constraints resmi)
+        run: |
+          pip install "apache-airflow==2.11.2" apache-airflow-providers-docker pytest \
+            --constraint https://raw.githubusercontent.com/apache/airflow/constraints-2.11.2/constraints-3.11.txt
+      - name: DAG integrity test
+        env:
+          AIRFLOW_HOME: /tmp/airflow
+          AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+        run: pytest -q tests/test_dag_integrity.py

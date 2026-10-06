@@ -103,6 +103,52 @@ make lint test   # ruff + pytest
 make dbt-local   # muat data contoh lalu dbt build (butuh Postgres di localhost:5432)
 ```
 
+## Orkestrasi Lintas Proyek
+
+Selain pipeline cuaca, Airflow di proyek ini juga berperan sebagai **control plane** untuk dua proyek lain di repo ini:
+
+```mermaid
+flowchart LR
+    subgraph AF["Airflow (proyek 01)"]
+        W["weather_elt<br/>harian"]
+        L["lakehouse_monthly<br/>bulanan"]
+        H["streaming_health<br/>tiap 10 menit"]
+    end
+    L -- "DockerOperator<br/>via docker-socket-proxy" --> C["container taxi-lakehouse<br/>(proyek 03)"]
+    C --> D[("03-lakehouse/lakehouse<br/>Delta tables")]
+    H -- "SQL" --> PG[("Postgres streaming<br/>(proyek 02)")]
+```
+
+### `lakehouse_monthly`: menjadwalkan lakehouse (proyek 03)
+
+`resolve_month → wait_for_source → fetch → bronze → silver → gold → maintain`
+
+- **Spark tidak dipasang di image Airflow.** Setiap tahap berjalan di container image `taxi-lakehouse` lewat `DockerOperator`, jadi image Airflow tetap ramping dan dependensi Java/Spark terisolasi.
+- **Akses Docker dibatasi** lewat [`docker-socket-proxy`](https://github.com/Tecnativa/docker-socket-proxy): Airflow hanya boleh mengelola container dan image, tidak bisa mengakses network, volume, atau exec.
+- **Menunggu data terbit.** NYC TLC menerbitkan data dengan jeda sekitar 2 bulan dan tanggalnya tidak pasti. Sensor `wait_for_source` (mode *reschedule*, tidak menahan worker) mengecek file setiap 6 jam, sampai maksimal 14 hari.
+- **Setiap tahap bisa di-retry sendiri.** Kalau silver gagal, bronze tidak perlu diulang. Semua tahap di proyek 03 idempoten, jadi retry aman.
+- **Parameter saat trigger:** `month` (YYYY-MM) dan `source` (`download` = data asli, `sample` = data contoh).
+
+```bash
+make trigger-lakehouse                                   # data contoh, bulan 2024-01
+make trigger-lakehouse MONTH=2024-03 SOURCE=download     # data asli NYC TLC
+```
+
+Hasilnya tersimpan di `03-lakehouse/lakehouse/`, jadi bisa langsung di-query dari proyek 03 (`make query`).
+
+### `streaming_health`: memantau pipeline streaming (proyek 02)
+
+Setiap 10 menit, DAG ini memeriksa **output** Spark job di Postgres proyek 02, bukan prosesnya:
+
+| Pemeriksaan | Gagal bila |
+|---|---|
+| `freshness` | jendela terbaru berakhir lebih dari 5 menit lalu (job mati, macet, atau producer berhenti) |
+| `volume` | pesanan/menit dalam 5 menit terakhir < 50% rata-rata 60 menit sebelumnya |
+
+Task akan merah di Airflow bila ada pemeriksaan yang gagal. Ambang batasnya bisa diatur lewat `STREAMING_MAX_LAG_MINUTES` dan `STREAMING_MIN_VOLUME_RATIO`. Aktifkan dengan `make health` setelah stack proyek 02 berjalan.
+
+Cara termudah menjalankan semuanya adalah `make up` dari **root repo**. Perintah itu mem-build image lakehouse, menyalakan stack streaming, lalu Airflow.
+
 ## Keputusan Desain
 
 - **ELT, bukan ETL.** Python hanya meratakan JSON (array paralel → baris). Semua logika bisnis ada di dbt, sehingga mudah dites dan terdokumentasi.
@@ -117,15 +163,19 @@ make dbt-local   # muat data contoh lalu dbt build (butuh Postgres di localhost:
 
 ```
 01-batch-elt-pipeline/
-├── dags/weather_elt.py          # DAG Airflow
+├── dags/
+│   ├── weather_elt.py           # DAG pipeline cuaca
+│   ├── lakehouse_monthly.py     # DAG lakehouse proyek 03 (DockerOperator)
+│   └── streaming_health.py      # DAG pemantauan streaming proyek 02
 ├── src/weather_pipeline/        # kode extract, lake, transform, load
+├── src/platform_ops/            # logika lintas proyek (tanpa Airflow, mudah dites)
 ├── dbt/
 │   ├── seeds/cities.csv         # daftar kota (dipakai juga oleh ingestion)
 │   ├── models/staging/          # pembersihan & penamaan kolom
 │   ├── models/marts/            # dim, fakta, dan mart
 │   ├── macros/                  # macro kategori cuaca WMO, nama schema
 │   └── tests/                   # tes generik custom & tes singular
-├── tests/                       # unit test pytest + fixture JSON
+├── tests/                       # unit test, DAG integrity test, fixture JSON
 ├── scripts/load_fixtures.py     # muat data contoh (dipakai CI)
 ├── docker-compose.yml
 └── Dockerfile.airflow

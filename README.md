@@ -65,6 +65,31 @@ flowchart LR
 
 👉 Detail arsitektur, model data, dan keputusan desain ada di README masing-masing proyek.
 
+### 🔗 Satu Platform: Airflow sebagai Control Plane
+
+Ketiga proyek bisa berjalan sendiri-sendiri, tapi juga bisa dijalankan sebagai **satu platform**. Airflow di proyek 01 menjadwalkan lakehouse dan memantau streaming:
+
+```mermaid
+flowchart LR
+    subgraph AF["Airflow · proyek 01"]
+        W["weather_elt<br/>harian"]
+        L["lakehouse_monthly<br/>bulanan"]
+        H["streaming_health<br/>tiap 10 menit"]
+    end
+    W --> DW[("Warehouse cuaca")]
+    L -- "DockerOperator" --> LH["Spark + Delta<br/>proyek 03"]
+    H -- "freshness & volume" --> ST["Kafka → Spark → Postgres<br/>proyek 02"]
+```
+
+- **`lakehouse_monthly`**: menunggu data NYC TLC terbit (sensor), lalu menjalankan bronze → silver → gold → maintain. Setiap tahap berjalan di container image proyek 03 lewat `DockerOperator` dan bisa di-retry sendiri.
+- **`streaming_health`**: memeriksa output pipeline streaming. Task merah bila data berhenti mengalir (> 5 menit) atau volume anjlok di bawah 50% baseline.
+
+```bash
+make up          # build image lakehouse, jalankan stack streaming + Airflow
+make lakehouse   # jalankan lakehouse lewat Airflow (data contoh)
+make health      # aktifkan pemantauan streaming
+```
+
 ---
 
 ## 🧠 Kompetensi yang Ditunjukkan
@@ -79,11 +104,11 @@ flowchart LR
 | **Kualitas data** | Tes dbt, validasi + dead-letter queue, karantina, quality gates yang menghentikan pipeline | 01, 02, 03 |
 | **Idempotensi** | Upsert, `MERGE`, `replaceWhere`, object key deterministik, exactly-once secara efektif | 01, 02, 03 |
 | **Optimasi** | Broadcast join, partition pruning, Z-ORDER, caching, `maxOffsetsPerTrigger` | 02, 03 |
-| **Orkestrasi** | DAG Airflow (TaskFlow), retry, backfill | 01 |
-| **Observability** | Streaming query listener, source freshness, dashboard Grafana | 01, 02 |
+| **Orkestrasi** | DAG Airflow (TaskFlow), retry, backfill, sensor (mode reschedule), `DockerOperator`, orkestrasi lintas sistem | 01, 02, 03 |
+| **Observability** | Streaming query listener, source freshness, dashboard Grafana, health check freshness & volume | 01, 02 |
 | **Infrastruktur** | Docker Compose multi-service, healthcheck, provisioning otomatis | 01, 02, 03 |
 | **Software engineering** | Logika transformasi dipisah dari I/O, pytest (50+ test), ruff, packaging Python | 01, 02, 03 |
-| **CI/CD** | GitHub Actions per proyek, termasuk tes integrasi dbt dengan Postgres | 01, 02, 03 |
+| **CI/CD** | GitHub Actions per proyek, termasuk tes integrasi dbt dengan Postgres dan DAG integrity test | 01, 02, 03 |
 
 ---
 
@@ -92,11 +117,12 @@ flowchart LR
 ```
 dataen/
 ├── README.md                        ← halaman ini
+├── Makefile                         # jalankan ketiga proyek sebagai satu platform
 ├── .github/workflows/               # CI terpisah untuk tiap proyek
 │   ├── batch-elt-ci.yml
 │   ├── streaming-ci.yml
 │   └── lakehouse-ci.yml
-├── 01-batch-elt-pipeline/           # Airflow + dbt + Postgres + MinIO
+├── 01-batch-elt-pipeline/           # Airflow + dbt + Postgres + MinIO (+ control plane)
 │   ├── dags/  src/  dbt/  tests/
 │   └── docker-compose.yml, Makefile, README.md
 ├── 02-streaming-pipeline/           # Kafka + Spark Structured Streaming + Grafana
@@ -107,7 +133,7 @@ dataen/
     └── docker-compose.yml, Makefile, README.md
 ```
 
-Setiap proyek **berdiri sendiri**, dengan dependensi, Docker Compose, Makefile, CI, dan README masing-masing. Jadi tiap proyek bisa dipelajari atau dijalankan tanpa menyentuh proyek lain.
+Setiap proyek **berdiri sendiri**, dengan dependensi, Docker Compose, Makefile, CI, dan README masing-masing. Jadi tiap proyek bisa dipelajari atau dijalankan tanpa menyentuh proyek lain. `Makefile` di root merangkai ketiganya menjadi satu platform.
 
 ---
 
@@ -119,6 +145,14 @@ Setiap proyek **berdiri sendiri**, dengan dependensi, Docker Compose, Makefile, 
 git clone https://github.com/dinulimann/dataen.git
 cd dataen
 ```
+
+**Seluruh platform sekaligus:**
+```bash
+make up && make lakehouse && make health
+```
+Lalu buka Airflow di http://localhost:8080 (`admin`/`admin`) dan Grafana di http://localhost:3000.
+
+**Atau per proyek:**
 
 | Proyek | Perintah | Lalu buka |
 |---|---|---|
@@ -152,7 +186,8 @@ Ketik `make help` di folder proyek mana pun untuk melihat semua perintah.
 - [x] **Proyek 03:** Lakehouse (PySpark, Delta Lake, medallion)
 - [x] Screenshot dashboard Grafana (proyek 02)
 - [ ] Screenshot Airflow dan Metabase (proyek 01)
-- [ ] Hubungkan proyek: arsip Parquet dari proyek 02 sebagai sumber lakehouse, diorkestrasi oleh Airflow
+- [x] Hubungkan proyek: Airflow menjadwalkan lakehouse dan memantau streaming
+- [ ] Notifikasi Telegram/Slack saat DAG gagal
 - [ ] Deploy salah satu proyek ke cloud (GCP/AWS) dengan Terraform
 - [ ] Tulisan singkat (blog) tentang pelajaran dari tiap proyek
 

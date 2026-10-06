@@ -1,4 +1,8 @@
-.PHONY: help setup up down clean logs trigger test lint dbt-local psql
+.PHONY: help setup up down clean logs trigger trigger-lakehouse health test lint dbt-local psql
+
+LAKEHOUSE_HOST_PATH ?= $(abspath ../03-lakehouse)
+MONTH ?= 2024-01
+SOURCE ?= sample
 
 help:  ## Tampilkan daftar perintah
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -8,7 +12,7 @@ setup:  ## Install dependensi untuk development lokal
 
 up:  ## Jalankan seluruh stack (Postgres, MinIO, Airflow)
 	@test -f .env || cp .env.example .env
-	docker compose up -d --build
+	LAKEHOUSE_HOST_PATH=$(LAKEHOUSE_HOST_PATH) docker compose up -d --build
 
 down:  ## Hentikan stack
 	docker compose down
@@ -22,6 +26,15 @@ logs:  ## Lihat log scheduler
 trigger:  ## Jalankan DAG secara manual
 	docker compose exec airflow-scheduler airflow dags unpause weather_elt
 	docker compose exec airflow-scheduler airflow dags trigger weather_elt
+
+trigger-lakehouse:  ## Jalankan DAG lakehouse (proyek 03), mis. make trigger-lakehouse MONTH=2024-01 SOURCE=download
+	@mkdir -p $(LAKEHOUSE_HOST_PATH)/data $(LAKEHOUSE_HOST_PATH)/lakehouse
+	docker compose exec airflow-scheduler airflow dags unpause lakehouse_monthly
+	docker compose exec airflow-scheduler airflow dags trigger lakehouse_monthly \
+		-c '{"month": "$(MONTH)", "source": "$(SOURCE)"}'
+
+health:  ## Aktifkan pemantauan kesehatan streaming (proyek 02)
+	docker compose exec airflow-scheduler airflow dags unpause streaming_health
 
 test:  ## Jalankan unit test
 	pytest -q
