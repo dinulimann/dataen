@@ -46,6 +46,8 @@ flowchart LR
     S --> DLQ[("Kafka DLQ")]
     S --> AR[("Parquet archive")]
 ```
+<img src="02-streaming-pipeline/docs/grafana-dashboard.png" alt="Dashboard Grafana real-time" width="720">
+
 - **Pertanyaan bisnis:** berapa GMV dan jumlah pesanan per menit di setiap kota *saat ini*?
 - Agregasi berbasis event time dengan **watermark**: event terlambat tetap dihitung, sedangkan event yang terlalu terlambat dibuang dan jumlahnya dicatat di log.
 - Event rusak masuk **dead-letter queue** beserta alasannya. **Checkpoint + upsert** membuat restart tidak menghitung data dua kali.
@@ -148,7 +150,8 @@ Ketik `make help` di folder proyek mana pun untuk melihat semua perintah.
 - [x] **Proyek 01:** Batch ELT (Airflow, dbt, PostgreSQL, MinIO)
 - [x] **Proyek 02:** Streaming (Kafka, Spark Structured Streaming, Grafana)
 - [x] **Proyek 03:** Lakehouse (PySpark, Delta Lake, medallion)
-- [ ] Screenshot dashboard Airflow, Grafana, dan Metabase di README
+- [x] Screenshot dashboard Grafana (proyek 02)
+- [ ] Screenshot Airflow dan Metabase (proyek 01)
 - [ ] Hubungkan proyek: arsip Parquet dari proyek 02 sebagai sumber lakehouse, diorkestrasi oleh Airflow
 - [ ] Deploy salah satu proyek ke cloud (GCP/AWS) dengan Terraform
 - [ ] Tulisan singkat (blog) tentang pelajaran dari tiap proyek
