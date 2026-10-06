@@ -1,0 +1,331 @@
+{
+  "uid": "orders-realtime",
+  "title": "Pesanan E-commerce Real-time",
+  "tags": [
+    "streaming",
+    "portfolio"
+  ],
+  "timezone": "Asia/Jakarta",
+  "refresh": "5s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Pesanan (rentang waktu)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "streaming-pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "streaming-pg"
+          },
+          "rawSql": "select coalesce(sum(orders),0) as orders from stream.order_metrics_1m where $__timeFilter(window_start)",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "GMV (Rp)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "streaming-pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "streaming-pg"
+          },
+          "rawSql": "select coalesce(sum(gmv_idr),0) as gmv from stream.order_metrics_1m where $__timeFilter(window_start)",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Rata-rata nilai pesanan (Rp)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "streaming-pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "streaming-pg"
+          },
+          "rawSql": "select coalesce(sum(gmv_idr)/nullif(sum(orders),0),0) as aov from stream.order_metrics_1m where $__timeFilter(window_start)",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Pesanan / menit (5 menit terakhir)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "streaming-pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "streaming-pg"
+          },
+          "rawSql": "select coalesce(sum(orders),0)/5.0 as opm from stream.order_metrics_1m where window_start >= now() - interval '5 minutes'",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "GMV per menit per kota",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "streaming-pg"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 16,
+        "x": 0,
+        "y": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "streaming-pg"
+          },
+          "rawSql": "select window_start as time, city as metric, sum(gmv_idr) as value from stream.order_metrics_1m where $__timeFilter(window_start) group by 1, 2 order by 1",
+          "format": "time_series",
+          "rawQuery": true,
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "piechart",
+      "title": "Metode pembayaran",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "streaming-pg"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 16,
+        "y": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "streaming-pg"
+          },
+          "rawSql": "select payment_method, sum(orders) as orders from stream.order_metrics_1m where $__timeFilter(window_start) group by 1 order by 2 desc",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "pieType": "donut",
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "percent"
+          ]
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Ringkasan per kota",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "streaming-pg"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "streaming-pg"
+          },
+          "rawSql": "select city as \"Kota\", sum(orders) as \"Pesanan\", sum(items) as \"Item\", sum(gmv_idr) as \"GMV (Rp)\", round(sum(gmv_idr)::numeric / nullif(sum(orders), 0)) as \"Rata-rata (Rp)\" from stream.order_metrics_1m where $__timeFilter(window_start) group by 1 order by 4 desc",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+services:
+  lakehouse:
+    build: .
+    image: taxi-lakehouse:local
+    environment:
+      RAW_DIR: /data/raw
+      LAKEHOUSE_DIR: /lakehouse
+      SPARK_DRIVER_MEMORY: ${SPARK_DRIVER_MEMORY:-4g}
+    volumes:
+      - ./data:/data
+      - ./lakehouse:/lakehouse
+    ports:
+      - "4041:4040"  # Spark UI selama job berjalan

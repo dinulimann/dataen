@@ -1,0 +1,33 @@
+name: 03 - Lakehouse CI
+
+on:
+  push:
+    paths: ["03-lakehouse/**", ".github/workflows/lakehouse-ci.yml"]
+  pull_request:
+    paths: ["03-lakehouse/**", ".github/workflows/lakehouse-ci.yml"]
+
+defaults:
+  run:
+    working-directory: 03-lakehouse
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Lint
+        run: |
+          ruff check src tests
+          ruff format --check src tests
+      - name: Unit tests (Spark lokal)
+        run: pytest -q
