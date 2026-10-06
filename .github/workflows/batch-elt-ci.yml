@@ -1,0 +1,54 @@
+name: 01 - Batch ELT CI
+
+on:
+  push:
+    paths: ["01-batch-elt-pipeline/**", ".github/workflows/batch-elt-ci.yml"]
+  pull_request:
+    paths: ["01-batch-elt-pipeline/**", ".github/workflows/batch-elt-ci.yml"]
+
+defaults:
+  run:
+    working-directory: 01-batch-elt-pipeline
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: warehouse
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      WAREHOUSE_HOST: localhost
+      WAREHOUSE_PORT: "5432"
+      WAREHOUSE_DB: warehouse
+      WAREHOUSE_USER: postgres
+      WAREHOUSE_PASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Lint
+        run: |
+          ruff check src dags tests scripts
+          ruff format --check src dags tests scripts
+      - name: Unit tests
+        run: pytest -q
+      - name: Load sample data
+        run: python scripts/load_fixtures.py
+      - name: dbt build (seed + models + data tests)
+        working-directory: 01-batch-elt-pipeline/dbt
+        run: dbt build --profiles-dir .
+      - name: dbt build again (incremental run must stay idempotent)
+        working-directory: 01-batch-elt-pipeline/dbt
+        run: dbt build --profiles-dir .

@@ -1,0 +1,15 @@
+apiVersion: 1
+datasources:
+  - name: Streaming Postgres
+    type: grafana-postgresql-datasource
+    uid: streaming-pg
+    url: postgres:5432
+    user: $PG_USER
+    isDefault: true
+    jsonData:
+      database: streaming
+      sslmode: disable
+      postgresVersion: 1600
+      timescaledb: false
+    secureJsonData:
+      password: $PG_PASSWORD
