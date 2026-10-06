@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: open_meteo
+    schema: raw
+    description: Data mentah dari Open-Meteo yang dimuat oleh Airflow.
+    loaded_at_field: ingested_at
+    freshness:
+      warn_after: {count: 2, period: day}
+      error_after: {count: 4, period: day}
+    tables:
+      - name: open_meteo_daily
+        description: Satu baris per kota per hari (primary key city_id + obs_date).

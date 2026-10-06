@@ -1,0 +1,101 @@
+{
+  "latitude": -6.918,
+  "longitude": 107.619,
+  "generationtime_ms": 0.12,
+  "utc_offset_seconds": 25200,
+  "timezone": "Asia/Jakarta",
+  "timezone_abbreviation": "GMT+7",
+  "elevation": 8.0,
+  "daily_units": {
+    "time": "iso8601",
+    "weather_code": "wmo code",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "temperature_2m_mean": "°C",
+    "precipitation_sum": "mm",
+    "precipitation_hours": "h",
+    "wind_speed_10m_max": "km/h"
+  },
+  "daily": {
+    "time": [
+      "2026-09-24",
+      "2026-09-25",
+      "2026-09-26",
+      "2026-09-27",
+      "2026-09-28",
+      "2026-09-29",
+      "2026-09-30",
+      "2026-10-01"
+    ],
+    "weather_code": [
+      3,
+      95,
+      63,
+      63,
+      0,
+      3,
+      95,
+      0
+    ],
+    "temperature_2m_max": [
+      27.5,
+      26.9,
+      27.6,
+      26.7,
+      27.1,
+      25.1,
+      25.7,
+      25.9
+    ],
+    "temperature_2m_min": [
+      20.3,
+      19.2,
+      20.3,
+      18.9,
+      18.2,
+      17.0,
+      17.6,
+      18.3
+    ],
+    "temperature_2m_mean": [
+      23.9,
+      23.0,
+      24.0,
+      22.8,
+      22.6,
+      21.1,
+      21.6,
+      22.1
+    ],
+    "precipitation_sum": [
+      0.4,
+      40.2,
+      14.1,
+      15.2,
+      0.0,
+      0.4,
+      41.6,
+      0.0
+    ],
+    "precipitation_hours": [
+      1.2,
+      21.1,
+      8.1,
+      8.6,
+      0.0,
+      1.2,
+      21.8,
+      0.0
+    ],
+    "wind_speed_10m_max": [
+      21.9,
+      20.5,
+      9.6,
+      5.6,
+      11.3,
+      10.4,
+      9.2,
+      23.9
+    ]
+  }
+}
