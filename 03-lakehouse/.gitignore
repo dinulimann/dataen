@@ -1,0 +1,10 @@
+data/
+lakehouse/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+spark-warehouse/
+metastore_db/
+derby.log
