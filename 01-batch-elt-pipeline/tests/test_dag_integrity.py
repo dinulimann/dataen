@@ -54,3 +54,21 @@ def test_lakehouse_params_validate_input(dagbag):
     params = dagbag.dags["lakehouse_monthly"].params
     assert params.get_param("source").schema["enum"] == ["download", "sample"]
     assert params.get_param("month").value is None
+
+
+def test_every_task_alerts_on_failure(dagbag):
+    missing = [
+        f"{dag_id}.{task.task_id}"
+        for dag_id, dag in dagbag.dags.items()
+        for task in dag.tasks
+        if not task.on_failure_callback
+    ]
+    assert missing == []
+
+
+def test_streaming_health_alerts_only_on_state_change(dagbag):
+    from platform_ops.notify import on_failure_state_change, on_recovery
+
+    task = dagbag.dags["streaming_health"].get_task("check_streaming_output")
+    assert task.on_failure_callback in (on_failure_state_change, [on_failure_state_change])
+    assert task.on_success_callback in (on_recovery, [on_recovery])

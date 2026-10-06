@@ -18,6 +18,8 @@ import pendulum
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowFailException
 
+from platform_ops.notify import on_failure_state_change, on_recovery
+
 log = logging.getLogger(__name__)
 
 
@@ -33,7 +35,7 @@ log = logging.getLogger(__name__)
     doc_md=__doc__,
 )
 def streaming_health():
-    @task
+    @task(on_failure_callback=on_failure_state_change, on_success_callback=on_recovery)
     def check_streaming_output() -> dict:
         import psycopg2
 

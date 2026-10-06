@@ -24,6 +24,7 @@ from airflow.providers.docker.operators.docker import DockerOperator
 from docker.types import Mount
 
 from platform_ops.lakehouse import STAGES, stage_command
+from platform_ops.notify import on_task_failure
 
 LAKEHOUSE_IMAGE = os.getenv("LAKEHOUSE_IMAGE", "taxi-lakehouse:local")
 # Path *di host* ke folder 03-lakehouse; diisi otomatis oleh `make up`.
@@ -62,7 +63,11 @@ def lakehouse_task(task_id: str, command: str, **kwargs) -> DockerOperator:
     start_date=pendulum.datetime(2026, 1, 1, tz="Asia/Jakarta"),
     catchup=False,
     max_active_runs=1,
-    default_args={"retries": 1, "retry_delay": timedelta(minutes=10)},
+    default_args={
+        "retries": 1,
+        "retry_delay": timedelta(minutes=10),
+        "on_failure_callback": on_task_failure,
+    },
     params={
         "month": Param(
             None,

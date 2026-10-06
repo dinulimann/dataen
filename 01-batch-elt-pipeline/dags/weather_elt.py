@@ -15,6 +15,8 @@ import pendulum
 from airflow.decorators import dag, task
 from airflow.operators.bash import BashOperator
 
+from platform_ops.notify import on_task_failure
+
 DBT_CMD = (
     "cd /opt/dbt && /home/airflow/dbt-venv/bin/dbt {cmd} "
     "--profiles-dir /opt/dbt --target-path /tmp/dbt/target --log-path /tmp/dbt/logs"
@@ -27,7 +29,11 @@ DBT_CMD = (
     start_date=pendulum.datetime(2026, 9, 1, tz="Asia/Jakarta"),
     catchup=False,
     max_active_runs=1,
-    default_args={"retries": 2, "retry_delay": timedelta(minutes=5)},
+    default_args={
+        "retries": 2,
+        "retry_delay": timedelta(minutes=5),
+        "on_failure_callback": on_task_failure,
+    },
     tags=["portfolio", "elt", "open-meteo"],
     doc_md=__doc__,
 )

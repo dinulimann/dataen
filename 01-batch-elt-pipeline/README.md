@@ -147,6 +147,24 @@ Setiap 10 menit, DAG ini memeriksa **output** Spark job di Postgres proyek 02, b
 
 Task akan merah di Airflow bila ada pemeriksaan yang gagal. Ambang batasnya bisa diatur lewat `STREAMING_MAX_LAG_MINUTES` dan `STREAMING_MIN_VOLUME_RATIO`. Aktifkan dengan `make health` setelah stack proyek 02 berjalan.
 
+### Notifikasi Telegram / Slack
+
+Setiap task yang gagal (setelah semua retry habis) mengirim pesan berisi DAG, task, error, dan link log:
+
+```
+🔴 Airflow: task gagal
+DAG: streaming_health
+Task: check_streaming_output (percobaan 1)
+Run: scheduled__2026-10-06T12:20:00+00:00
+Error: freshness: jendela terbaru berakhir 14.2 menit lalu (maks 5.0)
+Log: http://localhost:8080/dags/streaming_health/grid?...
+```
+
+- **Tanpa spam:** `streaming_health` berjalan setiap 10 menit, jadi DAG ini hanya mengirim alert saat **status berubah**, yaitu satu pesan 🔴 saat mulai bermasalah dan satu pesan 🟢 saat pulih. Run gagal berikutnya tidak memicu pesan ulang.
+- **Aktifkan** dengan mengisi `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` dan/atau `SLACK_WEBHOOK_URL` di `.env` (panduannya ada di `.env.example`). Tanpa konfigurasi, pesan hanya ditulis ke log.
+- Bila pengiriman alert gagal, hal itu tidak menutupi error asli task. Satu kanal yang gagal juga tidak menghalangi kanal lain.
+- DAG integrity test memastikan **setiap task** di semua DAG punya callback kegagalan.
+
 Cara termudah menjalankan semuanya adalah `make up` dari **root repo**. Perintah itu mem-build image lakehouse, menyalakan stack streaming, lalu Airflow.
 
 ## Keputusan Desain
@@ -168,7 +186,7 @@ Cara termudah menjalankan semuanya adalah `make up` dari **root repo**. Perintah
 │   ├── lakehouse_monthly.py     # DAG lakehouse proyek 03 (DockerOperator)
 │   └── streaming_health.py      # DAG pemantauan streaming proyek 02
 ├── src/weather_pipeline/        # kode extract, lake, transform, load
-├── src/platform_ops/            # logika lintas proyek (tanpa Airflow, mudah dites)
+├── src/platform_ops/            # logika lintas proyek & notifikasi (tanpa Airflow, mudah dites)
 ├── dbt/
 │   ├── seeds/cities.csv         # daftar kota (dipakai juga oleh ingestion)
 │   ├── models/staging/          # pembersihan & penamaan kolom
@@ -184,7 +202,7 @@ Cara termudah menjalankan semuanya adalah `make up` dari **root repo**. Perintah
 ## Pengembangan Selanjutnya
 
 - [ ] Simpan raw data dalam format Parquet dan query langsung dengan DuckDB
-- [ ] Notifikasi ke Slack/Telegram saat task gagal atau data terlambat
+- [x] Notifikasi ke Slack/Telegram saat task gagal atau data terlambat
 - [ ] Deploy ke cloud (GCS + BigQuery + Cloud Composer) dengan Terraform
 - [ ] Dashboard publik di Metabase / Looker Studio
 - [ ] Tambah sumber data lain (misalnya harga pangan) untuk analisis korelasi cuaca dan harga

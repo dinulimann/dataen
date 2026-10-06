@@ -83,6 +83,7 @@ flowchart LR
 
 - **`lakehouse_monthly`**: menunggu data NYC TLC terbit (sensor), lalu menjalankan bronze → silver → gold → maintain. Setiap tahap berjalan di container image proyek 03 lewat `DockerOperator` dan bisa di-retry sendiri.
 - **`streaming_health`**: memeriksa output pipeline streaming. Task merah bila data berhenti mengalir (> 5 menit) atau volume anjlok di bawah 50% baseline.
+- **Notifikasi Telegram / Slack** untuk setiap task yang gagal. Khusus pemantauan streaming, notifikasi hanya dikirim saat status berubah (🔴 bermasalah → 🟢 pulih), jadi tidak ada spam.
 
 ```bash
 make up          # build image lakehouse, jalankan stack streaming + Airflow
@@ -105,7 +106,7 @@ make health      # aktifkan pemantauan streaming
 | **Idempotensi** | Upsert, `MERGE`, `replaceWhere`, object key deterministik, exactly-once secara efektif | 01, 02, 03 |
 | **Optimasi** | Broadcast join, partition pruning, Z-ORDER, caching, `maxOffsetsPerTrigger` | 02, 03 |
 | **Orkestrasi** | DAG Airflow (TaskFlow), retry, backfill, sensor (mode reschedule), `DockerOperator`, orkestrasi lintas sistem | 01, 02, 03 |
-| **Observability** | Streaming query listener, source freshness, dashboard Grafana, health check freshness & volume | 01, 02 |
+| **Observability** | Streaming query listener, source freshness, dashboard Grafana, health check freshness & volume, alert Telegram/Slack tanpa spam | 01, 02 |
 | **Infrastruktur** | Docker Compose multi-service, healthcheck, provisioning otomatis | 01, 02, 03 |
 | **Software engineering** | Logika transformasi dipisah dari I/O, pytest (50+ test), ruff, packaging Python | 01, 02, 03 |
 | **CI/CD** | GitHub Actions per proyek, termasuk tes integrasi dbt dengan Postgres dan DAG integrity test | 01, 02, 03 |
@@ -187,7 +188,7 @@ Ketik `make help` di folder proyek mana pun untuk melihat semua perintah.
 - [x] Screenshot dashboard Grafana (proyek 02)
 - [ ] Screenshot Airflow dan Metabase (proyek 01)
 - [x] Hubungkan proyek: Airflow menjadwalkan lakehouse dan memantau streaming
-- [ ] Notifikasi Telegram/Slack saat DAG gagal
+- [x] Notifikasi Telegram/Slack saat DAG gagal
 - [ ] Deploy salah satu proyek ke cloud (GCP/AWS) dengan Terraform
 - [ ] Tulisan singkat (blog) tentang pelajaran dari tiap proyek
 
