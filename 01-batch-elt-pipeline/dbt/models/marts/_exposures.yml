@@ -1,0 +1,15 @@
+version: 2
+
+exposures:
+  - name: dashboard_cuaca_bulanan
+    label: Dashboard Cuaca Bulanan
+    type: dashboard
+    maturity: medium
+    url: http://localhost:3000
+    description: >
+      Dashboard Metabase (opsional, `docker compose --profile bi up -d`) yang
+      membandingkan suhu rata-rata dan jumlah hari hujan antar kota dan pulau.
+    depends_on:
+      - ref('mart_city_monthly_weather')
+    owner:
+      name: Data Engineering

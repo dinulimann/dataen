@@ -61,6 +61,10 @@ erDiagram
     }
 ```
 
+📖 **Dokumentasi lengkap model, kolom, tes, dan lineage:** [dinulimann.github.io/dataen](https://dinulimann.github.io/dataen/). Dokumentasi ini dibangun otomatis oleh CI dengan `dbt docs generate` setiap kali `main` berubah.
+
+![Lineage dbt](docs/dbt-lineage.png)
+
 - **`fct_weather_daily`**: grain-nya satu kota per hari. Model ini *incremental*: setiap run hanya memproses baris yang baru dimuat (berdasarkan `ingested_at`).
 - **`mart_city_monthly_weather`**: agregat bulanan yang siap dipakai di dashboard.
 - **Kode cuaca WMO** dipetakan ke kategori yang mudah dibaca (cerah, berawan, hujan, badai petir, …) lewat macro `wmo_weather_category`.
@@ -101,6 +105,7 @@ order by month desc, avg_temp_c desc;
 make setup       # pip install -e ".[dev]"
 make lint test   # ruff + pytest
 make dbt-local   # muat data contoh lalu dbt build (butuh Postgres di localhost:5432)
+make docs        # dokumentasi dbt di http://localhost:8081
 ```
 
 ## Orkestrasi Lintas Proyek
@@ -204,5 +209,6 @@ Cara termudah menjalankan semuanya adalah `make up` dari **root repo**. Perintah
 - [ ] Simpan raw data dalam format Parquet dan query langsung dengan DuckDB
 - [x] Notifikasi ke Slack/Telegram saat task gagal atau data terlambat
 - [ ] Deploy ke cloud (GCS + BigQuery + Cloud Composer) dengan Terraform
+- [x] Dokumentasi dbt (katalog + lineage) dipublikasikan otomatis ke GitHub Pages
 - [ ] Dashboard publik di Metabase / Looker Studio
 - [ ] Tambah sumber data lain (misalnya harga pangan) untuk analisis korelasi cuaca dan harga

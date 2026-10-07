@@ -1,4 +1,4 @@
-.PHONY: help setup up down clean logs trigger trigger-lakehouse health test lint dbt-local psql
+.PHONY: help setup up down clean logs trigger trigger-lakehouse health test lint dbt-local docs psql
 
 LAKEHOUSE_HOST_PATH ?= $(abspath ../03-lakehouse)
 MONTH ?= 2024-01
@@ -46,6 +46,10 @@ lint:  ## Cek gaya kode
 dbt-local:  ## Muat data contoh lalu dbt build (butuh Postgres di localhost:5432)
 	python scripts/load_fixtures.py
 	cd dbt && dbt build --profiles-dir .
+
+docs:  ## Generate & buka dokumentasi dbt di http://localhost:8081 (butuh Postgres di localhost:5432)
+	python scripts/load_fixtures.py
+	cd dbt && dbt build --profiles-dir . && dbt docs generate --profiles-dir . && dbt docs serve --profiles-dir . --port 8081
 
 psql:  ## Buka psql ke database warehouse
 	docker compose exec postgres psql -U postgres -d warehouse

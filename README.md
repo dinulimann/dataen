@@ -3,6 +3,7 @@
 [![01 - Batch ELT CI](https://github.com/dinulimann/dataen/actions/workflows/batch-elt-ci.yml/badge.svg)](https://github.com/dinulimann/dataen/actions/workflows/batch-elt-ci.yml)
 [![02 - Streaming CI](https://github.com/dinulimann/dataen/actions/workflows/streaming-ci.yml/badge.svg)](https://github.com/dinulimann/dataen/actions/workflows/streaming-ci.yml)
 [![03 - Lakehouse CI](https://github.com/dinulimann/dataen/actions/workflows/lakehouse-ci.yml/badge.svg)](https://github.com/dinulimann/dataen/actions/workflows/lakehouse-ci.yml)
+[![dbt docs](https://img.shields.io/badge/dbt_docs-lihat_online-FF694B?logo=dbt&logoColor=white)](https://dinulimann.github.io/dataen/)
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
 ![Airflow](https://img.shields.io/badge/Airflow-2.11-017CEE?logo=apacheairflow&logoColor=white)
@@ -36,6 +37,7 @@ flowchart LR
 - **Pertanyaan bisnis:** kota mana yang paling panas, dan bagaimana pola hari hujan tiap bulan di setiap pulau?
 - Idempoten di setiap langkah: object key deterministik, `ON CONFLICT` upsert, dan model dbt incremental. CI menjalankan `dbt build` dua kali untuk membuktikannya.
 - 17 tes kualitas data dbt dan pengecekan source freshness.
+- 📖 [Dokumentasi dbt online](https://dinulimann.github.io/dataen/): katalog kolom dan lineage, dipublikasikan otomatis oleh CI.
 
 ### 02 · Streaming Pipeline
 
@@ -109,7 +111,7 @@ make health      # aktifkan pemantauan streaming
 | **Observability** | Streaming query listener, source freshness, dashboard Grafana, health check freshness & volume, alert Telegram/Slack tanpa spam | 01, 02 |
 | **Infrastruktur** | Docker Compose multi-service, healthcheck, provisioning otomatis | 01, 02, 03 |
 | **Software engineering** | Logika transformasi dipisah dari I/O, pytest (50+ test), ruff, packaging Python | 01, 02, 03 |
-| **CI/CD** | GitHub Actions per proyek, termasuk tes integrasi dbt dengan Postgres dan DAG integrity test | 01, 02, 03 |
+| **CI/CD** | GitHub Actions per proyek, tes integrasi dbt dengan Postgres, DAG integrity test, dan dokumentasi dbt yang di-deploy otomatis ke GitHub Pages | 01, 02, 03 |
 
 ---
 
@@ -122,7 +124,8 @@ dataen/
 ├── .github/workflows/               # CI terpisah untuk tiap proyek
 │   ├── batch-elt-ci.yml
 │   ├── streaming-ci.yml
-│   └── lakehouse-ci.yml
+│   ├── lakehouse-ci.yml
+│   └── dbt-docs.yml                 # publikasi dokumentasi dbt ke GitHub Pages
 ├── 01-batch-elt-pipeline/           # Airflow + dbt + Postgres + MinIO (+ control plane)
 │   ├── dags/  src/  dbt/  tests/
 │   └── docker-compose.yml, Makefile, README.md
@@ -189,6 +192,7 @@ Ketik `make help` di folder proyek mana pun untuk melihat semua perintah.
 - [ ] Screenshot Airflow dan Metabase (proyek 01)
 - [x] Hubungkan proyek: Airflow menjadwalkan lakehouse dan memantau streaming
 - [x] Notifikasi Telegram/Slack saat DAG gagal
+- [x] Dokumentasi dbt dipublikasikan ke GitHub Pages
 - [ ] Deploy salah satu proyek ke cloud (GCP/AWS) dengan Terraform
 - [ ] Tulisan singkat (blog) tentang pelajaran dari tiap proyek
 

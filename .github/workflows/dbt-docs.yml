@@ -1,0 +1,76 @@
+name: 01 - dbt docs (GitHub Pages)
+
+# Membangun dokumentasi dbt (katalog + lineage) dari data contoh dan
+# mempublikasikannya ke GitHub Pages setiap kali main berubah.
+# Di pull request hanya build, tanpa publish.
+
+on:
+  push:
+    branches: [main]
+    paths: ["01-batch-elt-pipeline/dbt/**", "01-batch-elt-pipeline/scripts/**", ".github/workflows/dbt-docs.yml"]
+  pull_request:
+    paths: ["01-batch-elt-pipeline/dbt/**", "01-batch-elt-pipeline/scripts/**", ".github/workflows/dbt-docs.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: dbt-docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 01-batch-elt-pipeline
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: warehouse
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      WAREHOUSE_HOST: localhost
+      WAREHOUSE_PORT: "5432"
+      WAREHOUSE_DB: warehouse
+      WAREHOUSE_USER: postgres
+      WAREHOUSE_PASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - name: Muat data contoh
+        run: python scripts/load_fixtures.py
+      - name: dbt build + docs generate
+        working-directory: 01-batch-elt-pipeline/dbt
+        run: |
+          dbt build --profiles-dir .
+          dbt docs generate --static --profiles-dir .
+      - name: Siapkan situs
+        run: |
+          mkdir -p _site
+          cp dbt/target/static_index.html _site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: 01-batch-elt-pipeline/_site
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -2,39 +2,107 @@ version: 2
 
 models:
   - name: dim_city
-    description: Dimensi kota (dari seed).
+    description: Dimensi kota yang dipantau. Satu baris per kota, dibangun dari seed `cities`.
     columns:
       - name: city_id
+        description: '{{ doc("city_id") }}'
         data_tests: [unique, not_null]
+      - name: city_name
+        description: Nama kota untuk ditampilkan.
+      - name: province
+        description: Provinsi tempat kota berada.
+      - name: island
+        description: Pulau atau kelompok pulau, untuk analisis per wilayah.
+      - name: latitude
+        description: Lintang (derajat desimal) yang dipakai saat memanggil API.
+      - name: longitude
+        description: Bujur (derajat desimal) yang dipakai saat memanggil API.
 
   - name: fct_weather_daily
-    description: Fakta cuaca harian per kota. Grain = satu kota per hari. Incremental.
+    description: >
+      Fakta cuaca harian. **Grain: satu kota per hari.** Model *incremental*
+      (`delete+insert` berdasarkan `city_id` + `weather_date`), sehingga data
+      yang dimuat ulang memperbarui baris lama tanpa membuat duplikat.
     data_tests:
       - unique_combination:
           arguments:
             columns: [city_id, weather_date]
     columns:
       - name: city_id
+        description: '{{ doc("city_id") }}'
         data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_city')
                 field: city_id
+      - name: weather_date
+        description: '{{ doc("weather_date") }}'
+      - name: temp_max_c
+        description: '{{ doc("temp_max_c") }}'
+      - name: temp_min_c
+        description: '{{ doc("temp_min_c") }}'
+      - name: temp_mean_c
+        description: '{{ doc("temp_mean_c") }}'
+      - name: temp_range_c
+        description: Selisih suhu maksimum dan minimum hari itu (°C).
+      - name: precipitation_mm
+        description: '{{ doc("precipitation_mm") }}'
+      - name: precipitation_hours
+        description: '{{ doc("precipitation_hours") }}'
+      - name: is_rainy_day
+        description: >
+          `true` bila curah hujan ≥ `rainy_day_threshold_mm` (default 1 mm,
+          sesuai definisi hari hujan BMKG).
+      - name: wind_speed_max_kmh
+        description: '{{ doc("wind_speed_max_kmh") }}'
+      - name: weather_code
+        description: '{{ doc("weather_code") }}'
       - name: weather_category
+        description: Kategori cuaca yang mudah dibaca, hasil macro `wmo_weather_category`.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['cerah', 'berawan', 'berkabut', 'hujan', 'badai petir', 'lainnya']
+      - name: ingested_at
+        description: '{{ doc("ingested_at") }}'
 
   - name: mart_city_monthly_weather
-    description: Agregat bulanan per kota (suhu rata-rata, total hujan, jumlah hari hujan).
+    description: >
+      Ringkasan bulanan per kota, siap dipakai dashboard. **Grain: satu kota
+      per bulan.** Menjawab pertanyaan "kota mana yang paling panas dan
+      bagaimana pola hari hujan tiap bulan?".
     data_tests:
       - unique_combination:
           arguments:
             columns: [city_id, month]
     columns:
+      - name: city_id
+        description: '{{ doc("city_id") }}'
+      - name: city_name
+        description: Nama kota.
+      - name: province
+        description: Provinsi.
+      - name: island
+        description: Pulau atau kelompok pulau.
+      - name: month
+        description: Tanggal pertama bulan yang diringkas.
+      - name: days_observed
+        description: Jumlah hari yang ada datanya di bulan itu.
+      - name: avg_temp_c
+        description: Rata-rata suhu harian (°C).
+      - name: max_temp_c
+        description: Suhu tertinggi yang tercatat di bulan itu (°C).
+      - name: min_temp_c
+        description: Suhu terendah yang tercatat di bulan itu (°C).
+      - name: total_precipitation_mm
+        description: Total curah hujan sebulan (mm).
+      - name: rainy_days
+        description: Jumlah hari hujan (lihat `is_rainy_day`).
       - name: rainy_day_pct
+        description: Persentase hari hujan terhadap hari yang diamati.
         data_tests:
           - value_between:
               arguments: {min_value: 0, max_value: 100}
+      - name: thunderstorm_days
+        description: Jumlah hari dengan kategori cuaca `badai petir`.

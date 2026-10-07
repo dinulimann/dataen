@@ -2,25 +2,44 @@ version: 2
 
 models:
   - name: stg_open_meteo__daily
-    description: Data cuaca harian dengan nama kolom dan satuan yang jelas.
+    description: >
+      Data cuaca harian dari `raw.open_meteo_daily` dengan nama kolom dan satuan
+      yang jelas. Tidak ada logika bisnis di sini, hanya penamaan ulang.
     data_tests:
       - unique_combination:
           arguments:
             columns: [city_id, weather_date]
     columns:
       - name: city_id
+        description: '{{ doc("city_id") }}'
         data_tests: [not_null]
       - name: weather_date
+        description: '{{ doc("weather_date") }}'
         data_tests: [not_null]
+      - name: weather_code
+        description: '{{ doc("weather_code") }}'
       - name: temp_max_c
+        description: '{{ doc("temp_max_c") }}'
         data_tests:
           - value_between:
               arguments: {min_value: -10, max_value: 50}
       - name: temp_min_c
+        description: '{{ doc("temp_min_c") }}'
         data_tests:
           - value_between:
               arguments: {min_value: -10, max_value: 50}
+      - name: temp_mean_c
+        description: '{{ doc("temp_mean_c") }}'
       - name: precipitation_mm
+        description: '{{ doc("precipitation_mm") }}'
         data_tests:
           - value_between:
               arguments: {min_value: 0, max_value: 500}
+      - name: precipitation_hours
+        description: '{{ doc("precipitation_hours") }}'
+      - name: wind_speed_max_kmh
+        description: '{{ doc("wind_speed_max_kmh") }}'
+      - name: source_file
+        description: Object key file JSON mentah di MinIO asal baris ini (lineage ke data lake).
+      - name: ingested_at
+        description: '{{ doc("ingested_at") }}'

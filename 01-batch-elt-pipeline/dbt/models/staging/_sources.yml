@@ -10,4 +10,6 @@ sources:
       error_after: {count: 4, period: day}
     tables:
       - name: open_meteo_daily
-        description: Satu baris per kota per hari (primary key city_id + obs_date).
+        description: >
+          Satu baris per kota per hari (primary key `city_id` + `obs_date`),
+          di-upsert oleh task `load` di DAG `weather_elt`.
