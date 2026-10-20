@@ -1,9 +1,9 @@
-# 🛠️ Portofolio Data Engineering
+# 🛠️ Data Engineering Portfolio
 
 [![01 - Batch ELT CI](https://github.com/dinulimann/dataen/actions/workflows/batch-elt-ci.yml/badge.svg)](https://github.com/dinulimann/dataen/actions/workflows/batch-elt-ci.yml)
 [![02 - Streaming CI](https://github.com/dinulimann/dataen/actions/workflows/streaming-ci.yml/badge.svg)](https://github.com/dinulimann/dataen/actions/workflows/streaming-ci.yml)
 [![03 - Lakehouse CI](https://github.com/dinulimann/dataen/actions/workflows/lakehouse-ci.yml/badge.svg)](https://github.com/dinulimann/dataen/actions/workflows/lakehouse-ci.yml)
-[![dbt docs](https://img.shields.io/badge/dbt_docs-lihat_online-FF694B?logo=dbt&logoColor=white)](https://dinulimann.github.io/dataen/)
+[![dbt docs](https://img.shields.io/badge/dbt_docs-view_online-FF694B?logo=dbt&logoColor=white)](https://dinulimann.github.io/dataen/)
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
 ![Airflow](https://img.shields.io/badge/Airflow-2.11-017CEE?logo=apacheairflow&logoColor=white)
@@ -14,32 +14,34 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 
-Repositori ini berisi kumpulan proyek **data engineering end-to-end** yang mencakup tiga pola utama pemrosesan data: **batch**, **streaming**, dan **lakehouse**. Setiap proyek dibuat seperti sistem produksi berskala kecil: ada ingestion dari sumber nyata, penyimpanan berlapis, transformasi yang teruji, quality check, dan CI. Semuanya bisa dijalankan di laptop dengan Docker.
+Three **end-to-end data engineering** projects covering the three main processing patterns: **batch**, **streaming** and **lakehouse**. Each one is built like a small production system, with ingestion from real sources, layered storage, tested transformations, quality checks and CI. Everything runs on a laptop with Docker.
 
-Tujuannya menunjukkan bahwa saya bisa **memindahkan data dari sumber ke tempat yang berguna secara andal**, bukan sekadar menulis notebook analisis.
+The point is to show that I can **move data from where it is to where it's useful, reliably**, not just write an analysis notebook.
+
+> 🇮🇩 Versi Bahasa Indonesia: [README.id.md](README.id.md). The per-project READMEs (architecture, data model, design decisions) are in Indonesian.
 
 ---
 
-## 📂 Daftar Proyek
+## 📂 Projects
 
-| # | Proyek | Pola | Ringkasan | Stack |
+| # | Project | Pattern | Summary | Stack |
 |---|---|---|---|---|
-| 01 | [**Batch ELT: Cuaca Indonesia**](01-batch-elt-pipeline/) | Batch harian | Data cuaca 10 kota dari Open-Meteo → data lake → warehouse → model dbt (dim, fact, mart bulanan) | Airflow · dbt · PostgreSQL · MinIO |
-| 02 | [**Streaming: Pesanan E-commerce Real-time**](02-streaming-pipeline/) | Streaming | Event pesanan dari 8 kota → Kafka → agregasi per menit dengan watermark → dashboard real-time, dengan dead-letter queue | Kafka · Spark Structured Streaming · PostgreSQL · Grafana |
-| 03 | [**Lakehouse: NYC Taxi**](03-lakehouse/) | Lakehouse / big data | Jutaan perjalanan taksi → bronze → silver (validasi, karantina, MERGE) → gold, dengan quality gates dan time travel | PySpark · Delta Lake · Parquet |
+| 01 | [**Batch ELT: Indonesian Weather**](01-batch-elt-pipeline/) | Daily batch | Weather for 10 cities from Open-Meteo → data lake → warehouse → dbt models (dimension, fact, monthly mart) | Airflow · dbt · PostgreSQL · MinIO |
+| 02 | [**Streaming: Real-time E-commerce Orders**](02-streaming-pipeline/) | Streaming | Order events from 8 cities → Kafka → per-minute aggregates with watermarks → real-time dashboard, with a dead-letter queue | Kafka · Spark Structured Streaming · PostgreSQL · Grafana |
+| 03 | [**Lakehouse: NYC Taxi**](03-lakehouse/) | Lakehouse / big data | Millions of taxi trips → bronze → silver (validation, quarantine, MERGE) → gold, with quality gates and time travel | PySpark · Delta Lake · Parquet |
 
-### 01 · Batch ELT Pipeline
+### 01 · Batch ELT pipeline
 
 ```mermaid
 flowchart LR
     API[("Open-Meteo API")] --> E["extract"] --> S3[("MinIO")] --> L["load"] --> RAW[("Postgres raw")] --> DBT["dbt staging → marts"] --> BI["Metabase"]
 ```
-- **Pertanyaan bisnis:** kota mana yang paling panas, dan bagaimana pola hari hujan tiap bulan di setiap pulau?
-- Idempoten di setiap langkah: object key deterministik, `ON CONFLICT` upsert, dan model dbt incremental. CI menjalankan `dbt build` dua kali untuk membuktikannya.
-- 17 tes kualitas data dbt dan pengecekan source freshness.
-- 📖 [Dokumentasi dbt online](https://dinulimann.github.io/dataen/): katalog kolom dan lineage, dipublikasikan otomatis oleh CI.
+- **Business question:** which city is the hottest, and what does the monthly pattern of rainy days look like on each island?
+- Idempotent at every step: deterministic object keys, `ON CONFLICT` upserts and incremental dbt models. CI runs `dbt build` twice to prove it.
+- 17 dbt data-quality tests plus source freshness checks.
+- 📖 [dbt docs online](https://dinulimann.github.io/dataen/): column catalog and lineage, published automatically by CI.
 
-### 02 · Streaming Pipeline
+### 02 · Streaming pipeline
 
 ```mermaid
 flowchart LR
@@ -48,11 +50,11 @@ flowchart LR
     S --> DLQ[("Kafka DLQ")]
     S --> AR[("Parquet archive")]
 ```
-<img src="02-streaming-pipeline/docs/grafana-dashboard.png" alt="Dashboard Grafana real-time" width="720">
+<img src="02-streaming-pipeline/docs/grafana-dashboard.png" alt="Real-time Grafana dashboard" width="720">
 
-- **Pertanyaan bisnis:** berapa GMV dan jumlah pesanan per menit di setiap kota *saat ini*?
-- Agregasi berbasis event time dengan **watermark**: event terlambat tetap dihitung, sedangkan event yang terlalu terlambat dibuang dan jumlahnya dicatat di log.
-- Event rusak masuk **dead-letter queue** beserta alasannya. **Checkpoint + upsert** membuat restart tidak menghitung data dua kali.
+- **Business question:** what are GMV and order count per minute in each city *right now*?
+- Event-time aggregation with a **watermark**: late events are still counted; events that are too late are dropped and counted in the logs.
+- Malformed events go to a **dead-letter queue** with the reason. **Checkpoints + upserts** mean a restart never double-counts.
 
 ### 03 · Lakehouse
 
@@ -61,155 +63,140 @@ flowchart LR
     SRC[("NYC TLC Parquet")] --> B["🥉 Bronze"] --> S["🥈 Silver"] --> G["🥇 Gold"]
     B --> Q["⚠️ Quarantine"]
 ```
-- **Pertanyaan bisnis:** kapan dan di mana permintaan taksi paling tinggi, dan rute mana yang paling ramai?
-- Schema enforcement untuk menangani file bulanan yang skemanya berubah-ubah. Baris tidak valid dikarantina beserta alasannya.
-- Fitur Delta Lake: `MERGE`, `replaceWhere`, time travel, `OPTIMIZE ... ZORDER BY`. Pipeline berhenti otomatis bila quality gate gagal.
+- **Business question:** when and where is taxi demand highest, and which routes are busiest?
+- Schema enforcement to handle monthly files whose schema drifts. Invalid rows are quarantined with the reason.
+- Delta Lake features: `MERGE`, `replaceWhere`, time travel, `OPTIMIZE ... ZORDER BY`. The pipeline stops automatically when a quality gate fails.
 
-👉 Detail arsitektur, model data, dan keputusan desain ada di README masing-masing proyek.
+### 🔗 One platform: Airflow as the control plane
 
-### 🔗 Satu Platform: Airflow sebagai Control Plane
-
-Ketiga proyek bisa berjalan sendiri-sendiri, tapi juga bisa dijalankan sebagai **satu platform**. Airflow di proyek 01 menjadwalkan lakehouse dan memantau streaming:
+The three projects run independently, but they can also run as **one platform**. Airflow in project 01 schedules the lakehouse and monitors the stream:
 
 ```mermaid
 flowchart LR
-    subgraph AF["Airflow · proyek 01"]
-        W["weather_elt<br/>harian"]
-        L["lakehouse_monthly<br/>bulanan"]
-        H["streaming_health<br/>tiap 10 menit"]
+    subgraph AF["Airflow · project 01"]
+        W["weather_elt<br/>daily"]
+        L["lakehouse_monthly<br/>monthly"]
+        H["streaming_health<br/>every 10 min"]
     end
-    W --> DW[("Warehouse cuaca")]
-    L -- "DockerOperator" --> LH["Spark + Delta<br/>proyek 03"]
-    H -- "freshness & volume" --> ST["Kafka → Spark → Postgres<br/>proyek 02"]
+    W --> DW[("Weather warehouse")]
+    L -- "DockerOperator" --> LH["Spark + Delta<br/>project 03"]
+    H -- "freshness & volume" --> ST["Kafka → Spark → Postgres<br/>project 02"]
 ```
 
-- **`lakehouse_monthly`**: menunggu data NYC TLC terbit (sensor), lalu menjalankan bronze → silver → gold → maintain. Setiap tahap berjalan di container image proyek 03 lewat `DockerOperator` dan bisa di-retry sendiri.
-- **`streaming_health`**: memeriksa output pipeline streaming. Task merah bila data berhenti mengalir (> 5 menit) atau volume anjlok di bawah 50% baseline.
-- **Notifikasi Telegram / Slack** untuk setiap task yang gagal. Khusus pemantauan streaming, notifikasi hanya dikirim saat status berubah (🔴 bermasalah → 🟢 pulih), jadi tidak ada spam.
+- **`lakehouse_monthly`** waits for the NYC TLC data to be published (sensor), then runs bronze → silver → gold → maintenance. Each stage runs in the project 03 container image through `DockerOperator` and can be retried on its own.
+- **`streaming_health`** checks the streaming output. The task turns red when data stops flowing (> 5 minutes) or volume drops below 50% of the baseline.
+- **Telegram / Slack alerts** for every failed task. For streaming health, alerts only fire when the state changes (🔴 broken → 🟢 recovered), so there's no spam.
 
 ```bash
-make up          # build image lakehouse, jalankan stack streaming + Airflow
-make lakehouse   # jalankan lakehouse lewat Airflow (data contoh)
-make health      # aktifkan pemantauan streaming
+make up          # build the lakehouse image, start streaming + Airflow
+make lakehouse   # run the lakehouse through Airflow (sample data)
+make health      # enable streaming monitoring
 ```
 
 ---
 
-## 🧠 Kompetensi yang Ditunjukkan
+## 🧠 Skills demonstrated
 
-| Area | Yang dipraktikkan | Proyek |
+| Area | What's practised | Projects |
 |---|---|---|
-| **Ingestion** | REST API, producer Kafka (idempoten), unduhan file besar secara atomik | 01, 02, 03 |
-| **Batch processing** | Load harian/bulanan, backfill, partisi per tanggal | 01, 03 |
-| **Stream processing** | Event-time windowing, watermark, stateful aggregation, checkpoint, `foreachBatch` | 02 |
-| **Penyimpanan** | Data lake S3-compatible, Parquet terpartisi, Delta Lake (ACID, time travel) | 01, 02, 03 |
-| **Data modeling** | Staging → marts, star schema, model incremental, arsitektur medallion | 01, 03 |
-| **Kualitas data** | Tes dbt, validasi + dead-letter queue, karantina, quality gates yang menghentikan pipeline | 01, 02, 03 |
-| **Idempotensi** | Upsert, `MERGE`, `replaceWhere`, object key deterministik, exactly-once secara efektif | 01, 02, 03 |
-| **Optimasi** | Broadcast join, partition pruning, Z-ORDER, caching, `maxOffsetsPerTrigger` | 02, 03 |
-| **Orkestrasi** | DAG Airflow (TaskFlow), retry, backfill, sensor (mode reschedule), `DockerOperator`, orkestrasi lintas sistem | 01, 02, 03 |
-| **Observability** | Streaming query listener, source freshness, dashboard Grafana, health check freshness & volume, alert Telegram/Slack tanpa spam | 01, 02 |
-| **Infrastruktur** | Docker Compose multi-service, healthcheck, provisioning otomatis | 01, 02, 03 |
-| **Software engineering** | Logika transformasi dipisah dari I/O, pytest (50+ test), ruff, packaging Python | 01, 02, 03 |
-| **CI/CD** | GitHub Actions per proyek, tes integrasi dbt dengan Postgres, DAG integrity test, dan dokumentasi dbt yang di-deploy otomatis ke GitHub Pages | 01, 02, 03 |
+| **Ingestion** | REST API, idempotent Kafka producer, atomic download of large files | 01, 02, 03 |
+| **Batch processing** | Daily/monthly loads, backfills, date partitioning | 01, 03 |
+| **Stream processing** | Event-time windowing, watermarks, stateful aggregation, checkpoints, `foreachBatch` | 02 |
+| **Storage** | S3-compatible data lake, partitioned Parquet, Delta Lake (ACID, time travel) | 01, 02, 03 |
+| **Data modeling** | Staging → marts, star schema, incremental models, medallion architecture | 01, 03 |
+| **Data quality** | dbt tests, validation + dead-letter queue, quarantine, quality gates that stop the pipeline | 01, 02, 03 |
+| **Idempotency** | Upsert, `MERGE`, `replaceWhere`, deterministic object keys, effectively exactly-once | 01, 02, 03 |
+| **Optimization** | Broadcast joins, partition pruning, Z-ORDER, caching, `maxOffsetsPerTrigger` | 02, 03 |
+| **Orchestration** | Airflow DAGs (TaskFlow), retries, backfills, sensors (reschedule mode), `DockerOperator`, cross-system orchestration | 01, 02, 03 |
+| **Observability** | Streaming query listener, source freshness, Grafana dashboard, freshness & volume health checks, Telegram/Slack alerts without spam | 01, 02 |
+| **Infrastructure** | Multi-service Docker Compose, health checks, automatic provisioning | 01, 02, 03 |
+| **Software engineering** | Transformation logic separated from I/O, pytest (50+ tests), ruff, Python packaging | 01, 02, 03 |
+| **CI/CD** | GitHub Actions per project, dbt integration tests against Postgres, DAG integrity tests, dbt docs deployed to GitHub Pages | 01, 02, 03 |
 
 ---
 
-## 🗂️ Struktur Repositori
+## 🗂️ Repository layout
 
 ```
 dataen/
-├── README.md                        ← halaman ini
-├── Makefile                         # jalankan ketiga proyek sebagai satu platform
-├── .github/workflows/               # CI terpisah untuk tiap proyek
+├── README.md                        ← this page (README.id.md = Indonesian)
+├── Makefile                         # run all three projects as one platform
+├── .github/workflows/               # separate CI for each project
 │   ├── batch-elt-ci.yml
 │   ├── streaming-ci.yml
 │   ├── lakehouse-ci.yml
-│   └── dbt-docs.yml                 # publikasi dokumentasi dbt ke GitHub Pages
+│   └── dbt-docs.yml                 # publishes dbt docs to GitHub Pages
 ├── 01-batch-elt-pipeline/           # Airflow + dbt + Postgres + MinIO (+ control plane)
-│   ├── dags/  src/  dbt/  tests/
-│   └── docker-compose.yml, Makefile, README.md
 ├── 02-streaming-pipeline/           # Kafka + Spark Structured Streaming + Grafana
-│   ├── src/  tests/  grafana/
-│   └── docker-compose.yml, Makefile, README.md
 └── 03-lakehouse/                    # PySpark + Delta Lake (medallion)
-    ├── src/  tests/
-    └── docker-compose.yml, Makefile, README.md
 ```
 
-Setiap proyek **berdiri sendiri**, dengan dependensi, Docker Compose, Makefile, CI, dan README masing-masing. Jadi tiap proyek bisa dipelajari atau dijalankan tanpa menyentuh proyek lain. `Makefile` di root merangkai ketiganya menjadi satu platform.
+Each project **stands alone**, with its own dependencies, Docker Compose, Makefile, CI and README. The root `Makefile` ties them together into one platform.
 
 ---
 
-## 🚀 Mulai Cepat
+## 🚀 Quick start
 
-**Prasyarat:** Git, Docker dan Docker Compose, serta `make`. Untuk development lokal tanpa Docker: Python 3.11+, dan Java 17+ untuk proyek 02 dan 03.
+**Requirements:** Git, Docker with Docker Compose, and `make`. For local development without Docker: Python 3.11+, and Java 17+ for projects 02 and 03.
 
 ```bash
 git clone https://github.com/dinulimann/dataen.git
 cd dataen
+make up && make lakehouse && make health      # the whole platform
 ```
+Then open Airflow at http://localhost:8080 (`admin`/`admin`) and Grafana at http://localhost:3000.
 
-**Seluruh platform sekaligus:**
-```bash
-make up && make lakehouse && make health
-```
-Lalu buka Airflow di http://localhost:8080 (`admin`/`admin`) dan Grafana di http://localhost:3000.
+**Or one project at a time:**
 
-**Atau per proyek:**
-
-| Proyek | Perintah | Lalu buka |
+| Project | Command | Then open |
 |---|---|---|
 | 01 · Batch ELT | `cd 01-batch-elt-pipeline && make up && make trigger` | Airflow http://localhost:8080 (`admin`/`admin`) |
 | 02 · Streaming | `cd 02-streaming-pipeline && make up` | Grafana http://localhost:3000 |
 | 03 · Lakehouse | `cd 03-lakehouse && make build sample run` | `make query SQL="select * from gold_top_routes"` |
 
-Ketik `make help` di folder proyek mana pun untuk melihat semua perintah.
+Run `make help` in any project folder to see every command.
 
-> Proyek 01 dan 02 sama-sama memakai Postgres, tapi di port host yang berbeda (5432 dan 5433), jadi keduanya bisa berjalan bersamaan. Grafana (02) dan Metabase opsional (01) sama-sama memakai port 3000, jadi jalankan salah satu saja.
+> Projects 01 and 02 both use Postgres, on different host ports (5432 and 5433), so they can run side by side. Grafana (02) and the optional Metabase (01) both use port 3000, so run one at a time.
 
 ---
 
-## ✅ Standar yang Diterapkan di Setiap Proyek
+## ✅ Standards applied to every project
 
-- [x] **Bisa dijalankan dengan satu perintah** tanpa setup manual
-- [x] **Idempoten**: menjalankan ulang (retry, backfill, restart) tidak menimbulkan duplikat
-- [x] **Data mentah disimpan** sebelum ditransformasi, supaya bisa di-*replay*
-- [x] **Data buruk tidak dibuang diam-diam**: masuk karantina atau DLQ beserta alasannya
-- [x] **Tes otomatis** untuk kode (pytest) dan data (tes dbt / quality gates)
-- [x] **CI di GitHub Actions** yang berjalan setiap kali proyek terkait berubah
-- [x] **README** berisi diagram arsitektur, cara menjalankan, keputusan desain, dan rencana pengembangan
-- [x] **Tanpa kredensial di repo**: konfigurasi lewat environment variable (contohnya ada di `.env.example`)
+- [x] **Runs with one command**, no manual setup
+- [x] **Idempotent**: retries, backfills and restarts never create duplicates
+- [x] **Raw data is kept** before it's transformed, so it can be replayed
+- [x] **Bad data is never dropped silently**: it goes to quarantine or a DLQ with the reason
+- [x] **Automated tests** for code (pytest) and data (dbt tests / quality gates)
+- [x] **CI on GitHub Actions** that runs whenever the related project changes
+- [x] **README** with an architecture diagram, how to run it, design decisions and a roadmap
+- [x] **No credentials in the repo**: configuration through environment variables (see `.env.example`)
 
 ---
 
 ## 🗺️ Roadmap
 
-- [x] **Proyek 01:** Batch ELT (Airflow, dbt, PostgreSQL, MinIO)
-- [x] **Proyek 02:** Streaming (Kafka, Spark Structured Streaming, Grafana)
-- [x] **Proyek 03:** Lakehouse (PySpark, Delta Lake, medallion)
-- [x] Screenshot dashboard Grafana (proyek 02)
-- [ ] Screenshot Airflow dan Metabase (proyek 01)
-- [x] Hubungkan proyek: Airflow menjadwalkan lakehouse dan memantau streaming
-- [x] Notifikasi Telegram/Slack saat DAG gagal
-- [x] Dokumentasi dbt dipublikasikan ke GitHub Pages
-- [ ] Deploy salah satu proyek ke cloud (GCP/AWS) dengan Terraform
-- [ ] Tulisan singkat (blog) tentang pelajaran dari tiap proyek
+- [x] **Project 01:** Batch ELT (Airflow, dbt, PostgreSQL, MinIO)
+- [x] **Project 02:** Streaming (Kafka, Spark Structured Streaming, Grafana)
+- [x] **Project 03:** Lakehouse (PySpark, Delta Lake, medallion)
+- [x] Grafana dashboard screenshot (project 02)
+- [ ] Airflow and Metabase screenshots (project 01)
+- [x] Connect the projects: Airflow schedules the lakehouse and monitors streaming
+- [x] Telegram/Slack alerts when a DAG fails
+- [x] dbt docs published to GitHub Pages
+- [ ] Deploy one project to the cloud (GCP/AWS) with Terraform
 
 ---
 
-## 👋 Tentang Saya
+## 👋 About me
 
-<!-- TODO: ganti bagian ini dengan profil kamu -->
+I'm **Dinul Iman**, a backend-focused full-stack developer who loves data. In my day job I work on a payroll system for ~5,000 employees (PHP, PostgreSQL, Oracle), including the Oracle → PostgreSQL → payroll → Oracle journal integration.
 
-Halo! Saya **[Nama Kamu]**, seorang calon Data Engineer yang tertarik membangun pipeline data yang andal dan mudah dirawat.
+- 💼 LinkedIn: [linkedin.com/in/dinul-iman-818034178](https://www.linkedin.com/in/dinul-iman-818034178/)
+- 📧 Email: [dinulimankappa@gmail.com](mailto:dinulimankappa@gmail.com)
+- 🐙 More projects: [github.com/dinulimann](https://github.com/dinulimann)
 
-- 💼 LinkedIn: [linkedin.com/in/username](https://linkedin.com/in/username)
-- 📧 Email: [email@contoh.com](mailto:email@contoh.com)
-- 🌐 Blog/Website: _opsional_
-
-Terbuka untuk kesempatan **Data Engineer / Analytics Engineer**. Silakan hubungi saya!
+Open to freelance and full-time work in data engineering and backend development.
 
 ---
 
-<sub>Sumber data: [Open-Meteo](https://open-meteo.com/) (CC BY 4.0) · [NYC Taxi & Limousine Commission](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page) · data e-commerce bersifat sintetis.</sub>
+<sub>Data sources: [Open-Meteo](https://open-meteo.com/) (CC BY 4.0) · [NYC Taxi & Limousine Commission](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page) · e-commerce data is synthetic.</sub>
